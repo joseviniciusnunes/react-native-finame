@@ -7,29 +7,29 @@ import Snackbar from './src/components/Feedback/Snackbar';
 import LoadingApp from './src/pages/splashScreen/LoadingApp';
 
 export default function App() {
-	const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
-	async function loadingOpenDatabase() {
-		await Model.open();
-		setLoading(false);
-	}
+    async function loadingOpenDatabase() {
+        await Model.open();
+        setLoading(false);
+    }
 
-	useEffect(() => {
-		loadingOpenDatabase();
-		return () => Model.close();
-	}, []);
+    useEffect(() => {
+        loadingOpenDatabase();
+        return () => Model.close();
+    }, []);
 
 
-	if (loading) {
-		return <LoadingApp />;
-	} else {
-		return (
-			<>
-				<StatusBar backgroundColor="#085EB3" />
-				<Routes />
-				<Snackbar />
-			</>
-		);
-	}
+    if (loading) {
+        return <LoadingApp />;
+    } else {
+        return (
+            <>
+                <StatusBar backgroundColor="#085EB3" />
+                <Snackbar />
+                <Routes />
+            </>
+        );
+    }
 
 }

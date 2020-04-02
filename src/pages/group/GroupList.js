@@ -38,6 +38,7 @@ export default function GroupList({ navigation }) {
 }
 
 function ItemGroup({ item, navigation }) {
+    const qtSubGrupos = Array.from(global.Database.objects('SubGroup').filtered(`group.id = '${item.id}'`)).length;
     return (
         <TouchableOpacity
             style={styles.viewItemGroup}
@@ -45,6 +46,10 @@ function ItemGroup({ item, navigation }) {
             <View style={styles.viewItemName}>
                 <Text style={styles.textLabel}>Nome</Text>
                 <Text style={styles.textName}>{item.name}</Text>
+            </View>
+            <View style={styles.viewItemName}>
+                <Text style={styles.textLabel}>Qt. Sub-Grupos</Text>
+                <Text style={styles.textName}>{qtSubGrupos}</Text>
             </View>
         </TouchableOpacity>
     );

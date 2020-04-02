@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
     textbuttonDelete: {
         fontSize: 14,
         color: '#C30000',
-        marginLeft: 15,
+        marginLeft: 15
     }
 });

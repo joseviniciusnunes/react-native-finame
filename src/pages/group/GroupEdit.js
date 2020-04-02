@@ -1,46 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, Text, FlatList } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, Text, FlatList, Button } from 'react-native';
 import { TextInput } from 'react-native-paper';
+import Modal from "react-native-modal";
 
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 export default function GroupEdit({ route, navigation }) {
     const [name, setName] = useState('');
     const [subGroups, setSubGroups] = useState([]);
+    const [itemSubGroup, setItemSubGroup] = useState(null);
+    const [group, setGroup] = useState(null);
 
     useEffect(() => {
         const { params } = route;
         if (params) {
             navigation.setOptions({ title: 'Editar Grupo' });
+            setGroup(params);
             setName(params.name);
-            setSubGroups(Array.from(global.Database.objects('SubGroup').filtered(`group.id = '1c9c60f0-73a5-11ea-95cd-0fa95c492d8e'`)));
+            loadingSubGroup();
         }
     }, []);
 
-    async function handleSaveGroup() {
+    function loadingSubGroup() {
+        const id = route.params ? route.params.id : group.id
+        setSubGroups(Array.from(global.Database.objects('SubGroup').filtered(`group.id = '${id}'`)));
+    }
+
+    async function handleSaveGroup(inBackStack) {
         try {
             if (name === '') {
                 global.showSnackbar('Informe o nome do grupo')
                 return;
             }
 
+            let groupSaved = null;
             global.Database.write(() => {
-                if (!route.params) {
-                    global.Database.create('Group', {
+                if (!group) {
+                    groupSaved = global.Database.create('Group', {
                         id: global.uuid(),
                         name
                     });
                 } else {
-                    const { id } = route.params;
                     global.Database.create('Group', {
-                        id,
+                        id: group.id,
                         name
                     }, 'modified');
                 }
             });
-
-            global.showSnackbar('Grupo salvo!')
-            navigation.goBack();
+            global.showSnackbar({ text: 'Grupo salvo!', duration: 1000 });
+            if (inBackStack) {
+                navigation.goBack();
+                return null;
+            } else {
+                setGroup(groupSaved);
+                return (groupSaved);
+            }
         } catch (error) {
             global.showSnackbar(error.message)
         }
@@ -53,10 +67,11 @@ export default function GroupEdit({ route, navigation }) {
                 text: 'Sim',
                 onPress: () => {
                     try {
-                        const { id } = route.params;
                         global.Database.write(() => {
-                            const obj = global.Database.objects('Group').filtered(`id = '${id}'`);
-                            global.Database.delete(obj);
+                            const objSubGroup = global.Database.objects('SubGroup').filtered(`group.id = '${group.id}'`);
+                            global.Database.delete(objSubGroup);
+                            const objGroup = global.Database.objects('Group').filtered(`id = '${group.id}'`);
+                            global.Database.delete(objGroup);
                         });
                         global.showSnackbar('Grupo excluído!')
                         navigation.goBack();
@@ -68,54 +83,99 @@ export default function GroupEdit({ route, navigation }) {
         ]);
     }
 
+    async function handleAddSubGrupo(itemSubGroup) {
+        if (!group) {
+            const groupSaved = await handleSaveGroup(false);
+            if (!groupSaved) {
+                return;
+            }
+            itemSubGroup.group = groupSaved;
+        } else {
+            itemSubGroup.group = group;
+        }
+        setItemSubGroup(itemSubGroup);
+    }
+
     return (
-        <View style={styles.viewRoot}>
-            <View style={styles.viewInputName}>
-                <TextInput
-                    label='Nome'
-                    value={name}
-                    onChangeText={text => setName(text)}
-                    mode="outlined"
-                    fontSize={19}
-                />
-            </View>
-            <View style={styles.viewButton}>
-                <View style={styles.viewButtonSave}>
-                    <TouchableOpacity onPress={handleSaveGroup} style={styles.buttonSave}>
-                        <MaterialIcons name="check" size={22} color="#FFF" />
-                        <Text style={styles.textbuttonSave}>SALVAR</Text>
-                    </TouchableOpacity>
+        <>
+            <View style={styles.viewRoot}>
+                <View style={styles.viewInputName}>
+                    <TextInput
+                        label='Nome'
+                        value={name}
+                        onChangeText={text => setName(text)}
+                        mode="outlined"
+                        fontSize={19}
+                    />
                 </View>
-                {route.params && (
-                    <View style={styles.viewButtonDelete}>
-                        <TouchableOpacity
-                            onPress={handleDeleteGroup}
-                            style={styles.buttonDelete}>
-                            <MaterialIcons name="close" size={22} color="#C30000" />
-                            <Text style={styles.textbuttonDelete}>EXCLUIR</Text>
+                <View style={styles.viewButton}>
+                    <View style={styles.viewButtonSave}>
+                        <TouchableOpacity onPress={() => handleSaveGroup(true)} style={styles.buttonSave}>
+                            <MaterialIcons name="check" size={22} color="#FFF" />
+                            <Text style={styles.textbuttonSave}>SALVAR</Text>
                         </TouchableOpacity>
                     </View>
-                )}
+                    {group && (
+                        <View style={styles.viewButtonDelete}>
+                            <TouchableOpacity
+                                onPress={handleDeleteGroup}
+                                style={styles.buttonDelete}>
+                                <MaterialIcons name="close" size={22} color="#C30000" />
+                                <Text style={styles.textbuttonDelete}>EXCLUIR</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+                <View style={styles.viewDivider} />
+                <View style={styles.viewActionSubGroup}>
+                    <Text style={styles.textSubGroup}>Sub-Grupos</Text>
+                    <TouchableOpacity style={styles.buttonAddSubGroup} onPress={() => handleAddSubGrupo({ id: null, name: '' })}>
+                        <MaterialIcons name="add" size={22} color="#FFF" />
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.viewSubGroup}>
+                    <FlatList
+                        data={subGroups}
+                        keyExtractor={(item) => item.id}
+                        renderItem={props => <ItemSubGroup {...props} navigation={navigation} loadingSubGroup={loadingSubGroup} handleAddSubGrupo={handleAddSubGrupo} />}
+                    />
+                </View>
             </View>
-            <View style={styles.viewDivider} />
-            <View style={styles.viewActionSubGroup}>
-                <Text style={styles.textSubGroup}>Sub-Grupos</Text>
-                <TouchableOpacity style={styles.buttonAddSubGroup}>
-                    <MaterialIcons name="add" size={22} color="#FFF" />
-                </TouchableOpacity>
-            </View>
-            <View style={styles.viewSubGroup}>
-                <FlatList
-                    data={subGroups}
-                    keyExtractor={(item) => item.id}
-                    renderItem={props => <ItemSubGroup {...props} navigation={navigation} />}
-                />
-            </View>
-        </View>
+            <ModalCreateSubGroup item={itemSubGroup} onClose={() => {
+                setItemSubGroup(null);
+                loadingSubGroup();
+            }} />
+        </>
     );
 }
 
-function ItemSubGroup({ item, navigation }) {
+function ItemSubGroup({ item, navigation, loadingSubGroup, handleAddSubGrupo }) {
+
+    function handleDeleteSubGroup() {
+        Alert.alert(null, 'Deseja realmente excluir este sub-grupo?', [
+            { text: 'Não', onPress: () => { } },
+            {
+                text: 'Sim',
+                onPress: () => {
+                    try {
+                        global.Database.write(() => {
+                            const obj = global.Database.objects('SubGroup').filtered(`id = '${item.id}'`);
+                            global.Database.delete(obj);
+                        });
+                        global.showSnackbar('Sub-grupo excluído!')
+                        loadingSubGroup();
+                    } catch (error) {
+                        global.showSnackbar(error.message)
+                    }
+                },
+            },
+        ]);
+    }
+
+    function handleEditSubGroup() {
+        handleAddSubGrupo({ ...item });
+    }
+
     return (
         <View
             style={styles.viewItemGroup}
@@ -123,6 +183,14 @@ function ItemSubGroup({ item, navigation }) {
             <View style={styles.viewItemName}>
                 <Text style={styles.textLabel}>Nome</Text>
                 <Text style={styles.textName}>{item.name}</Text>
+            </View>
+            <View style={styles.viewEditSubGroup}>
+                <TouchableOpacity style={styles.opEditSubGroup} onPress={handleEditSubGroup}>
+                    <MaterialIcons name="edit" size={22} color="#6200ee" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.opEditSubGroup} onPress={handleDeleteSubGroup}>
+                    <MaterialIcons name="close" size={22} color="#C30000" />
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -228,5 +296,135 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 8
+    },
+    viewEditSubGroup: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    opEditSubGroup: {
+        height: '100%',
+        width: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
+});
+
+function ModalCreateSubGroup({ item, onClose }) {
+
+    if (!item) {
+        return null;
+    }
+
+    const [name, setName] = useState('');
+
+    useEffect(() => {
+        if (item) {
+            setName(item.name);
+        }
+    }, [])
+
+    async function handleSaveSuvGroup() {
+        try {
+            if (name === '') {
+                global.showSnackbar('Informe o nome do sub-grupo')
+                return;
+            }
+
+            global.Database.write(() => {
+                if (!item.id) {
+                    global.Database.create('SubGroup', {
+                        id: global.uuid(),
+                        name,
+                        group: global.Database.objects('Group').filtered(`id = '${item.group.id}'`)[0]
+                    });
+                } else {
+                    global.Database.create('SubGroup', {
+                        id: item.id,
+                        name
+                    }, 'modified');
+                }
+            });
+
+            global.showSnackbar({ text: 'Sub-grupo salvo!', duration: 1000 });
+            onClose();
+        } catch (error) {
+            global.showSnackbar(error.message)
+        }
+    }
+
+    return (
+        <View>
+            <Modal
+                isVisible
+                style={styleSubGroup.modalRoot}
+                onBackButtonPress={onClose}
+                onBackdropPress={onClose}
+            >
+                <View style={styleSubGroup.viewRoot}>
+                    <Text style={styleSubGroup.textTitle}>Criar Sub-Grupo</Text>
+                    <View style={styleSubGroup.viewInputName}>
+                        <TextInput
+                            label='Nome'
+                            value={name}
+                            onChangeText={setName}
+                            mode="outlined"
+                            fontSize={19}
+                        />
+                    </View>
+                    <View style={styleSubGroup.viewAction}>
+                        <TouchableOpacity style={styleSubGroup.opActionClose} onPress={onClose}>
+                            <Text style={styleSubGroup.textClose}>SAIR</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styleSubGroup.opActionSave} onPress={handleSaveSuvGroup}>
+                            <Text style={styleSubGroup.textSave}>SALVAR</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </View>
+
+    )
+}
+
+const styleSubGroup = StyleSheet.create({
+    viewRoot: {
+        backgroundColor: '#FFF',
+        borderRadius: 6,
+        paddingTop: 15,
+        paddingLeft: 15,
+        paddingRight: 15,
+        elevation: 15
+    },
+    textTitle: {
+        fontSize: 16,
+        marginBottom: 10
+    },
+    viewAction: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+    },
+    opActionClose: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        marginRight: 40
+    },
+    opActionSave: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        backgroundColor: '#6200ee',
+        marginVertical: 20,
+        borderRadius: 10
+    },
+    textSave: {
+        color: '#FFF'
+    },
+    textClose: {
+        color: '#0B6AC9'
     }
 });
