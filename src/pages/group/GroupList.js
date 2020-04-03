@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
+import { constTypeGroup } from '../../constants/group';
+
 export default function GroupList({ navigation }) {
     const [groups, setGroups] = useState([]);
 
     async function loadingGroups() {
         try {
-            const result = global.Database.objects('Group');
+            const result = global.Database.objects('Group').sorted('name', false);
             setGroups(Array.from(result));
         } catch (error) {
             global.showSnackbar(error.message)
@@ -46,6 +48,10 @@ function ItemGroup({ item, navigation }) {
             <View style={styles.viewItemName}>
                 <Text style={styles.textLabel}>Nome</Text>
                 <Text style={styles.textName}>{item.name}</Text>
+            </View>
+            <View style={styles.viewItemName}>
+                <Text style={styles.textLabel}>Tipo</Text>
+                <Text style={styles.textName}>{constTypeGroup[item.type]}</Text>
             </View>
             <View style={styles.viewItemName}>
                 <Text style={styles.textLabel}>Qt. Sub-Grupos</Text>

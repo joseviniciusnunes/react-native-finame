@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, Text, FlatList, Button } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, Text, FlatList } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import Modal from "react-native-modal";
 
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
+import { constTypeGroup } from '../../constants/group';
+
 export default function GroupEdit({ route, navigation }) {
     const [name, setName] = useState('');
+    const [typeGroup, setTypeGroup] = useState('E');
     const [subGroups, setSubGroups] = useState([]);
     const [itemSubGroup, setItemSubGroup] = useState(null);
     const [group, setGroup] = useState(null);
@@ -17,6 +20,7 @@ export default function GroupEdit({ route, navigation }) {
             navigation.setOptions({ title: 'Editar Grupo' });
             setGroup(params);
             setName(params.name);
+            setTypeGroup(params.type);
             loadingSubGroup();
         }
     }, []);
@@ -38,12 +42,14 @@ export default function GroupEdit({ route, navigation }) {
                 if (!group) {
                     groupSaved = global.Database.create('Group', {
                         id: global.uuid(),
+                        type: typeGroup,
                         name
                     });
                 } else {
                     global.Database.create('Group', {
                         id: group.id,
-                        name
+                        name,
+                        type: typeGroup,
                     }, 'modified');
                 }
             });
@@ -96,6 +102,14 @@ export default function GroupEdit({ route, navigation }) {
         setItemSubGroup(itemSubGroup);
     }
 
+    function handleTypeGroup(type) {
+        if (type === 'E') {
+
+        } else {
+
+        }
+    }
+
     return (
         <>
             <View style={styles.viewRoot}>
@@ -107,6 +121,14 @@ export default function GroupEdit({ route, navigation }) {
                         mode="outlined"
                         fontSize={19}
                     />
+                </View>
+                <View style={styles.viewTypeGroup}>
+                    <TouchableOpacity style={{ ...styles.opTypeGroup, ...(typeGroup === 'E' ? styles.opTypeSelected : {}) }} onPress={() => setTypeGroup('E')}>
+                        <Text style={{ ...styles.textTypeGroup, ...(typeGroup === 'E' ? styles.textOpTypeSelected : {}) }}>{constTypeGroup['E']}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ ...styles.opTypeGroup, ...(typeGroup === 'S' ? styles.opTypeSelected : {}) }} onPress={() => setTypeGroup('S')}>
+                        <Text style={{ ...styles.textTypeGroup, ...(typeGroup === 'S' ? styles.textOpTypeSelected : {}) }}>{constTypeGroup['S']}</Text>
+                    </TouchableOpacity>
                 </View>
                 <View style={styles.viewButton}>
                     <View style={styles.viewButtonSave}>
@@ -209,7 +231,7 @@ const styles = StyleSheet.create({
         marginTop: 15,
     },
     viewButton: {
-        marginTop: 35,
+        marginTop: 15,
         flexDirection: 'column',
     },
     viewButtonDelete: {
@@ -307,6 +329,32 @@ const styles = StyleSheet.create({
         width: 60,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    viewTypeGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        paddingVertical: 10,
+        paddingHorizontal: 5
+    },
+    opTypeGroup: {
+        height: 45,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#DDD',
+        borderRadius: 5,
+        flex: 1,
+        marginHorizontal: 5
+    },
+    opTypeSelected: {
+        backgroundColor: '#105EE4',
+        elevation: 5
+    },
+    textOpTypeSelected: {
+        color: '#FFF'
+    },
+    textTypeGroup: {
+        fontSize: 16
     }
 });
 

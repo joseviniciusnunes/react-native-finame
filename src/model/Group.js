@@ -3,6 +3,7 @@ export default {
     primaryKey: 'id',
     properties: {
         id: 'string',
-        name: 'string'
+        name: 'string',
+        type: 'string'
     }
 }

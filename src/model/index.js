@@ -10,7 +10,7 @@ export async function open() {
             console.log('\x1b[35m', 'Creating connection Realm...')
             global.Database = await Realm.open({
                 schema: [Account, Group, SubGroup],
-                schemaVersion: 3
+                schemaVersion: 4
             });
             console.log('\x1b[32m', 'Success conection Realm!', global.Database.path);
             global.uuid = uuid;

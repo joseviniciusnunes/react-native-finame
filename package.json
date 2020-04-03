@@ -9,10 +9,12 @@
         "test": "jest",
         "lint": "eslint .",
         "apk": "cd android && gradlew clean && gradlew app:assembleRelease",
-        "clear": "cd android && gradlew clean"
+        "clear": "cd android && gradlew clean",
+        "emu": "start \"Android\" \"C:\\Program Files\\Genymobile\\Genymotion\\player.exe\"  --vm-name \"Android 9\""
     },
     "dependencies": {
         "@react-native-community/masked-view": "^0.1.7",
+        "@react-native-community/picker": "^1.3.0",
         "@react-native-community/progress-bar-android": "^1.0.1",
         "@react-navigation/drawer": "^5.3.4",
         "@react-navigation/native": "^5.1.3",
